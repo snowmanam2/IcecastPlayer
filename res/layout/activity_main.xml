@@ -25,4 +25,13 @@
         android:layout_below="@+id/download_button"
         android:text="Waiting..." />
 
+    <Button
+        android:id="@+id/purge_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/textView1"
+        android:layout_centerHorizontal="true"
+        android:text="Purge"
+        android:onClick="purgeDatabase" />
+
 </RelativeLayout>

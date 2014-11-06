@@ -1,6 +1,12 @@
 package com.gmail.snowmanam2.icecastplayer;
 
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+
+import org.xmlpull.v1.XmlPullParserException;
+
 import android.app.Activity;
 import android.app.DownloadManager;
 import android.content.BroadcastReceiver;
@@ -20,6 +26,7 @@ public class MainActivity extends Activity {
 
 	private TextView tv;
 	private long downloadID;
+	IcecastDatabase db;
 	
 	private BroadcastReceiver downloadCompleteReceiver = new BroadcastReceiver() {
 	    @Override
@@ -63,6 +70,9 @@ public class MainActivity extends Activity {
 		String downloadCompleteIntentName = DownloadManager.ACTION_DOWNLOAD_COMPLETE;
 		IntentFilter downloadCompleteIntentFilter = new IntentFilter(downloadCompleteIntentName);
 		getApplicationContext().registerReceiver(downloadCompleteReceiver, downloadCompleteIntentFilter);
+		this.db = new IcecastDatabase(getApplicationContext());
+		
+		tv.setText(db.getNumStations() + " stations in database.");
 	}
 
 	@Override
@@ -84,8 +94,35 @@ public class MainActivity extends Activity {
 		downloadID = manager.enqueue(request);
 	}
 
-	public void onDownloadCompleted (String uri){
+	public void onDownloadCompleted (String uri) {
 		tv.setText ("Downloaded file.\nBuilding Database...");
+		
+		InputStream in;
+		try {
+			in = getContentResolver().openInputStream(Uri.parse(uri));
+		} catch (FileNotFoundException e) {
+			Log.w("Icecast Player", "Couldn't open downloaded file");
+			return;
+		}
+
+		IcecastXmlParser parser = new IcecastXmlParser();
+		
+		try {
+			parser.parse(in, this.db);
+		} catch (XmlPullParserException e) {
+			tv.setText("Parsing Error");
+			return;
+		} catch (IOException e) {
+			tv.setText("IO Error");
+		}
+		//tv.setText("Done.");
+		tv.setText("Done. " + db.getNumStations() +" stations in database.");
+	}
+	
+	public void purgeDatabase (View view) {
+		db.purge();
+		
+		tv.setText(db.getNumStations() + " stations in database.");
 	}
 	
 }
