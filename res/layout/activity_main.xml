@@ -34,4 +34,22 @@
         android:text="Purge"
         android:onClick="purgeDatabase" />
 
+    <EditText
+        android:id="@+id/search_field"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/textView1"
+        android:layout_below="@+id/textView1"
+        android:layout_marginTop="22dp"
+        android:ems="10"
+        android:hint="Search..." />
+
+    <ListView
+        android:id="@+id/listView1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/search_field"
+        android:layout_below="@+id/search_field" >
+    </ListView>
+
 </RelativeLayout>

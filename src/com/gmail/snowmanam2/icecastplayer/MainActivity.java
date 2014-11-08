@@ -15,18 +15,30 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.FilterQueryProvider;
+import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
 public class MainActivity extends Activity {
 
+	private ListView lv;
+	private EditText et;
 	private TextView tv;
+	private Button button;
 	private long downloadID;
-	IcecastDatabase db;
+	private IcecastDatabase db;
+	private SimpleCursorAdapter dataAdapter;
 	
 	private BroadcastReceiver downloadCompleteReceiver = new BroadcastReceiver() {
 	    @Override
@@ -53,7 +65,9 @@ public class MainActivity extends Activity {
 	    		int uriIndex = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI);
 	    		String downloadedFileUriString = cursor.getString(uriIndex);
 
-	    		onDownloadCompleted(downloadedFileUriString);
+	    		//onDownloadCompleted(downloadedFileUriString);
+	    		BuildDatabaseTask task = new BuildDatabaseTask();
+	    		task.execute(downloadedFileUriString);
 	    	}
 	    }
 	};
@@ -66,6 +80,10 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.activity_main);
 		
 		tv = (TextView) findViewById(R.id.textView1);
+		button = (Button) findViewById(R.id.download_button);
+		et = (EditText) findViewById(R.id.search_field);
+		lv = (ListView) findViewById(R.id.listView1);
+		
 		
 		String downloadCompleteIntentName = DownloadManager.ACTION_DOWNLOAD_COMPLETE;
 		IntentFilter downloadCompleteIntentFilter = new IntentFilter(downloadCompleteIntentName);
@@ -73,6 +91,42 @@ public class MainActivity extends Activity {
 		this.db = new IcecastDatabase(getApplicationContext());
 		
 		tv.setText(db.getNumStations() + " stations in database.");
+	
+		Cursor cursor = db.getStationsByName("a");
+		
+		String[] columns = new String[] {
+			db.KEY_NAME,
+			db.KEY_URL,
+			db.KEY_GENRE
+		};
+		
+		int[] to = new int[] {
+			R.id.station_name,
+			R.id.listen_url,
+			R.id.genre,
+		};
+		
+		dataAdapter = new SimpleCursorAdapter (this, R.layout.station_info, cursor, columns, to, 0);
+		lv.setAdapter(dataAdapter);
+		dataAdapter.setFilterQueryProvider(new FilterQueryProvider () {
+				public Cursor runQuery (CharSequence constraint) {
+					return db.getStationsByName(constraint.toString());
+				}
+			});
+		
+		et.addTextChangedListener(new TextWatcher() { 
+			public void afterTextChanged(Editable s) {
+			}
+			
+			public void beforeTextChanged(CharSequence s, int start, 
+					int count, int after) {
+			}
+			
+			public void onTextChanged(CharSequence s, int start,
+					int before, int count) {
+				dataAdapter.getFilter().filter(s.toString());
+			}
+		});
 	}
 
 	@Override
@@ -84,6 +138,7 @@ public class MainActivity extends Activity {
 	
 	public void startDownload (View view){
 		tv.setText("Downloading file...");
+		button.setEnabled(false);
 		DownloadManager.Request request = new DownloadManager.Request(Uri.parse("http://dir.xiph.org/yp.xml"));
 		request.setDescription("Icecast data file");
 		request.setTitle("Icecast");
@@ -94,29 +149,49 @@ public class MainActivity extends Activity {
 		downloadID = manager.enqueue(request);
 	}
 
-	public void onDownloadCompleted (String uri) {
-		tv.setText ("Downloaded file.\nBuilding Database...");
-		
-		InputStream in;
-		try {
-			in = getContentResolver().openInputStream(Uri.parse(uri));
-		} catch (FileNotFoundException e) {
-			Log.w("Icecast Player", "Couldn't open downloaded file");
-			return;
-		}
+	
+	private class BuildDatabaseTask extends AsyncTask<String, String, String> {
+		@Override
+		protected String doInBackground (String... params) {
+			
+			InputStream in;
+			try {
+				in = getContentResolver().openInputStream(Uri.parse(params[0]));
+			} catch (FileNotFoundException e) {
+				Log.w("Icecast Player", "Couldn't open downloaded file");
+				return "";
+			}
 
-		IcecastXmlParser parser = new IcecastXmlParser();
-		
-		try {
-			parser.parse(in, this.db);
-		} catch (XmlPullParserException e) {
-			tv.setText("Parsing Error");
-			return;
-		} catch (IOException e) {
-			tv.setText("IO Error");
+			IcecastXmlParser parser = new IcecastXmlParser();
+			
+			try {
+				parser.parse(in, db);
+			} catch (XmlPullParserException e) {
+				//tv.setText("Parsing Error");
+				return "Parsing Error";
+			} catch (IOException e) {
+				//tv.setText("IO Error");
+				return "IO Error";
+			}
+			
+			return "";
 		}
-		//tv.setText("Done.");
-		tv.setText("Done. " + db.getNumStations() +" stations in database.");
+		
+		@Override
+		protected void onPreExecute () {
+			tv.setText("Building database...");
+		}
+		
+		@Override
+		protected void onPostExecute (String result) {
+			if (result.equals("")){
+				tv.setText("Done. "+db.getNumStations()+" stations in database.");
+ 			} else {
+ 				tv.setText(result);
+ 			}
+			
+			button.setEnabled(true);
+		}
 	}
 	
 	public void purgeDatabase (View view) {

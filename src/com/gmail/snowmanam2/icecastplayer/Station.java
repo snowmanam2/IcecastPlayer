@@ -6,6 +6,8 @@ public class Station {
 	private String listenUrl;
 	private String genre;
 	
+	public Station (){}
+	
 	public Station (String stationName, String listenUrl, String genre) {
 		this.stationName = stationName;
 		this.listenUrl = listenUrl;
@@ -16,11 +18,23 @@ public class Station {
 		return stationName;
 	}
 	
+	public void setStationName (String name) {
+		this.stationName = name;
+	}
+	
 	public String getListenUrl () {
 		return listenUrl;
 	}
 	
+	public void setListenUrl (String url) {
+		this.listenUrl = url;
+	}
+	
 	public String getGenre () {
 		return genre;
+	}
+	
+	public void setGenre (String genre) {
+		this.genre = genre;
 	}
 }

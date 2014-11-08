@@ -14,9 +14,12 @@ public class IcecastDatabase extends SQLiteOpenHelper {
 
 	private static final String TABLE_ICECAST = "icecast";
 	
-	private static final String KEY_NAME = "station_name";
-	private static final String KEY_URL = "listen_url";
-	private static final String KEY_GENRE = "genre";
+	public static final String KEY_ID = "_id";
+	public static final String KEY_NAME = "station_name";
+	public static final String KEY_URL = "listen_url";
+	public static final String KEY_GENRE = "genre";
+	
+	public static final String[] COLUMNS = {KEY_ID, KEY_NAME, KEY_URL, KEY_GENRE};
 	
 	SQLiteDatabase writedb;
 	
@@ -28,8 +31,9 @@ public class IcecastDatabase extends SQLiteOpenHelper {
 	public void onCreate(SQLiteDatabase db) {
 		// SQL statement to create book table
 		String CREATE_ICECAST_TABLE = "CREATE TABLE icecast ( " +
+			KEY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
 			KEY_NAME + " TEXT, " +
-			KEY_URL + " TEXT PRIMARY KEY, "+
+			KEY_URL + " TEXT UNIQUE, "+
 			KEY_GENRE + " TEXT )";
  
 		// create Icecast table
@@ -87,4 +91,44 @@ public class IcecastDatabase extends SQLiteOpenHelper {
 		}
 	}
 	
+	public Station getStation (String url) {
+		SQLiteDatabase db = this.getReadableDatabase();
+		
+		Cursor cursor = db.query(TABLE_ICECAST,
+				COLUMNS,
+				" "+KEY_URL+" ?",
+				new String[]{url},
+				null,
+				null,
+				null,
+				null);
+		
+		if (cursor != null) cursor.moveToFirst();
+		else return null;
+		
+		Station station = new Station();
+		
+		station.setStationName(cursor.getString(1));
+		station.setListenUrl(cursor.getString(2));
+		station.setGenre(cursor.getString(3));
+		
+		return station;
+	}
+	
+	public Cursor getStationsByName (String input) {
+		SQLiteDatabase db = this.getReadableDatabase();
+		
+		Cursor cursor = db.query(TABLE_ICECAST,
+				null,
+				" "+KEY_NAME+" LIKE ?",
+				new String[]{"%"+input+"%"},
+				null,
+				null,
+				KEY_NAME,
+				null);
+		
+		//db.close();
+		return cursor;
+		
+	}
 }
