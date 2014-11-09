@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteQueryBuilder;
 
 public class IcecastDatabase extends SQLiteOpenHelper {
 	// Database Version
@@ -65,7 +66,7 @@ public class IcecastDatabase extends SQLiteOpenHelper {
 	public void endTransaction () {
 		this.writedb.setTransactionSuccessful();
 		this.writedb.endTransaction();
-		this.writedb.close();
+		//this.writedb.close();
 	}
 	
 	public void addStation (Station station) {
@@ -130,5 +131,31 @@ public class IcecastDatabase extends SQLiteOpenHelper {
 		//db.close();
 		return cursor;
 		
+	}
+	
+	public Cursor getStationsByNameISect (String[] inputs) {
+		SQLiteDatabase db = this.getReadableDatabase();
+		
+		String[] vals = new String[inputs.length];
+		
+		String where = "";
+		
+		for (int i = 0; i < inputs.length; i++) {
+			if (i > 0) where +=" AND ";
+			where += KEY_NAME+" LIKE ?";
+			vals[i] = "%"+inputs[i]+"%";
+		}
+
+		Cursor cursor = db.query(TABLE_ICECAST,
+				null,
+				where,
+				vals,
+				null,
+				null,
+				KEY_NAME,
+				null);
+		
+		//db.close();
+		return cursor;
 	}
 }

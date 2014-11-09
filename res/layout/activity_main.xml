@@ -42,7 +42,9 @@
         android:layout_below="@+id/textView1"
         android:layout_marginTop="22dp"
         android:ems="10"
-        android:hint="Search..." />
+        android:hint="Search..."
+        android:inputType="text"
+        android:imeOptions="actionDone" />
 
     <ListView
         android:id="@+id/listView1"

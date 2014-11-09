@@ -23,6 +23,7 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FilterQueryProvider;
@@ -92,12 +93,12 @@ public class MainActivity extends Activity {
 		
 		tv.setText(db.getNumStations() + " stations in database.");
 	
-		Cursor cursor = db.getStationsByName("a");
+		Cursor cursor = db.getStationsByName("");
 		
 		String[] columns = new String[] {
-			db.KEY_NAME,
-			db.KEY_URL,
-			db.KEY_GENRE
+			IcecastDatabase.KEY_NAME,
+			IcecastDatabase.KEY_URL,
+			IcecastDatabase.KEY_GENRE
 		};
 		
 		int[] to = new int[] {
@@ -127,6 +128,15 @@ public class MainActivity extends Activity {
 				dataAdapter.getFilter().filter(s.toString());
 			}
 		});
+		
+		/*et.setOnEditorActionListener(new OnEditorActionListener () {
+			public boolean onEditorAction(TextView v, int actionID, KeyEvent event) {
+				return false;
+			}
+		});*/
+		
+		getWindow().setSoftInputMode(
+			      WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 	}
 
 	@Override
