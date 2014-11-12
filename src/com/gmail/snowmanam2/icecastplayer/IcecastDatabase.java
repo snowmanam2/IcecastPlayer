@@ -31,7 +31,7 @@ public class IcecastDatabase extends SQLiteOpenHelper {
 	@Override
 	public void onCreate(SQLiteDatabase db) {
 		// SQL statement to create book table
-		String CREATE_ICECAST_TABLE = "CREATE TABLE icecast ( " +
+		String CREATE_ICECAST_TABLE = "CREATE TABLE "+TABLE_ICECAST+" ( " +
 			KEY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
 			KEY_NAME + " TEXT, " +
 			KEY_URL + " TEXT UNIQUE, "+
@@ -92,13 +92,37 @@ public class IcecastDatabase extends SQLiteOpenHelper {
 		}
 	}
 	
-	public Station getStation (String url) {
+	public Station getStationByUrl (String url) {
 		SQLiteDatabase db = this.getReadableDatabase();
 		
 		Cursor cursor = db.query(TABLE_ICECAST,
 				COLUMNS,
 				" "+KEY_URL+" ?",
 				new String[]{url},
+				null,
+				null,
+				null,
+				null);
+		
+		if (cursor != null) cursor.moveToFirst();
+		else return null;
+		
+		Station station = new Station();
+		
+		station.setStationName(cursor.getString(1));
+		station.setListenUrl(cursor.getString(2));
+		station.setGenre(cursor.getString(3));
+		
+		return station;
+	}
+	
+	public Station getStationById (int id) {
+SQLiteDatabase db = this.getReadableDatabase();
+		
+		Cursor cursor = db.query(TABLE_ICECAST,
+				COLUMNS,
+				" "+KEY_ID+" ?",
+				new String[]{String.valueOf(id)},
 				null,
 				null,
 				null,

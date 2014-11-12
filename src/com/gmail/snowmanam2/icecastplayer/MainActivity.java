@@ -14,22 +14,29 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnPreparedListener;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.PowerManager;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FilterQueryProvider;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends Activity {
 
@@ -40,6 +47,7 @@ public class MainActivity extends Activity {
 	private long downloadID;
 	private IcecastDatabase db;
 	private SimpleCursorAdapter dataAdapter;
+	private MediaPlayer mp;
 	
 	private BroadcastReceiver downloadCompleteReceiver = new BroadcastReceiver() {
 	    @Override
@@ -97,13 +105,13 @@ public class MainActivity extends Activity {
 		
 		String[] columns = new String[] {
 			IcecastDatabase.KEY_NAME,
-			IcecastDatabase.KEY_URL,
+			//IcecastDatabase.KEY_URL,
 			IcecastDatabase.KEY_GENRE
 		};
 		
 		int[] to = new int[] {
 			R.id.station_name,
-			R.id.listen_url,
+			//R.id.listen_url,
 			R.id.genre,
 		};
 		
@@ -129,16 +137,64 @@ public class MainActivity extends Activity {
 			}
 		});
 		
-		/*et.setOnEditorActionListener(new OnEditorActionListener () {
-			public boolean onEditorAction(TextView v, int actionID, KeyEvent event) {
-				return false;
+		lv.setOnItemClickListener(new OnItemClickListener(){
+			@Override
+			public void onItemClick(AdapterView<?>adapter,View v, int position, long id){
+
+				Cursor cursor = (Cursor) lv.getItemAtPosition(position);
+				String url = cursor.getString(cursor.getColumnIndexOrThrow(IcecastDatabase.KEY_URL));
+				//Toast.makeText(getApplicationContext(), name,Toast.LENGTH_SHORT).show();
+
+				//if (mp.isPlaying()) mp.reset();
+				mp.reset();
+				
+				try {
+					mp.setAudioStreamType(AudioManager.STREAM_MUSIC);
+					mp.setDataSource(url);
+				} catch (IOException e) {
+					Log.e("Icecast Player", "Couldn't open stream");
+				}
+				
+				mp.prepareAsync();
+				Toast.makeText(getApplicationContext(), "Starting stream...",Toast.LENGTH_LONG).show();
 			}
-		});*/
+		});
+		
+		mp = new MediaPlayer();
+		mp.setOnPreparedListener(new OnPreparedListener() {
+			@Override
+			public void onPrepared (MediaPlayer m) {
+				mp.start();
+				Toast.makeText(getApplicationContext(), "Stream started",Toast.LENGTH_SHORT).show();
+			}
+		});
+		mp.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
 		
 		getWindow().setSoftInputMode(
 			      WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 	}
 
+	@Override
+	public void onStop () {
+		super.onStop();
+		
+		mp.stop();
+		mp.release();
+	}
+	
+	@Override
+	public void onPause () {
+		super.onPause();
+		
+		mp.stop();
+	}
+	
+	@Override
+	public void onResume () {
+		super.onResume();
+
+	}
+	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
